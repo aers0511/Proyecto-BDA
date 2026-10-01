@@ -1,21 +1,39 @@
 package com.tutiket.view.cliente;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.math.BigDecimal;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+
 import com.tutiket.domain.Cliente;
 import com.tutiket.domain.CuentaCliente;
 import com.tutiket.repository.impl.JdbcCuentaClienteRepository;
 import com.tutiket.repository.impl.JdbcOperacionCuentaRepository;
 import com.tutiket.service.CuentaClienteService;
 import com.tutiket.view.Theme;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.math.BigDecimal;
-import java.util.List;
 
 public class ClienteCuentaPanel extends JPanel {
 
@@ -184,14 +202,30 @@ public class ClienteCuentaPanel extends JPanel {
         add(cardTable, BorderLayout.CENTER);
 
         cargarCuentas();
+
+        // Listener para recargar las cuentas automáticamente cada vez que la pantalla se vuelva visible
+        addAncestorListener(new AncestorListener() {
+            @Override
+            public void ancestorAdded(AncestorEvent event) {
+                cargarCuentas();
+            }
+
+            @Override
+            public void ancestorRemoved(AncestorEvent event) {
+            }
+
+            @Override
+            public void ancestorMoved(AncestorEvent event) {
+            }
+        });
     }
 
     private void configurarRenderizadorTabla() {
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
-                                                           boolean isSelected, boolean hasFocus,
-                                                           int row, int column) {
+                    boolean isSelected, boolean hasFocus,
+                    int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
                 // Alineación por columna
@@ -235,10 +269,10 @@ public class ClienteCuentaPanel extends JPanel {
                 acumuladoTotal = acumuladoTotal.add(saldo);
 
                 Object[] fila = {
-                        cc.getId(),
-                        cc.getBanco() != null && !cc.getBanco().trim().isEmpty() ? cc.getBanco() : "Banco TuTiket",
-                        enmascararCuenta(cc.getNumeroCuenta()),
-                        String.format("$%,.2f MXN", saldo)
+                    cc.getId(),
+                    cc.getBanco() != null && !cc.getBanco().trim().isEmpty() ? cc.getBanco() : "Banco TuTiket",
+                    enmascararCuenta(cc.getNumeroCuenta()),
+                    String.format("$%,.2f MXN", saldo)
                 };
                 tableModel.addRow(fila);
             }

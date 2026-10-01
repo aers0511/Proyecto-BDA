@@ -1,17 +1,30 @@
 package com.tutiket.view.cliente;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+
 import com.tutiket.config.DatabaseConfig;
 import com.tutiket.domain.Cliente;
 import com.tutiket.domain.CuentaCliente;
 import com.tutiket.repository.impl.JdbcCuentaClienteRepository;
 import com.tutiket.view.Theme;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.math.BigDecimal;
-import java.sql.Connection;
-import java.util.List;
 
 public class ClienteMetodosPagoPanel extends JPanel {
 
@@ -51,6 +64,22 @@ public class ClienteMetodosPagoPanel extends JPanel {
         add(scrollCuentas, BorderLayout.CENTER);
 
         cargarCuentasBancarias();
+
+        // Listener para recargar automáticamente al hacerse visible el panel
+        addAncestorListener(new AncestorListener() {
+            @Override
+            public void ancestorAdded(AncestorEvent event) {
+                cargarCuentasBancarias();
+            }
+
+            @Override
+            public void ancestorRemoved(AncestorEvent event) {
+            }
+
+            @Override
+            public void ancestorMoved(AncestorEvent event) {
+            }
+        });
     }
 
     public void cargarCuentasBancarias() {

@@ -1,5 +1,28 @@
 package com.tutiket.view.cliente;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.sql.Connection;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.border.EmptyBorder;
+
 import com.tutiket.config.DatabaseConfig;
 import com.tutiket.domain.Boleto;
 import com.tutiket.domain.Cliente;
@@ -7,18 +30,14 @@ import com.tutiket.domain.CuentaCliente;
 import com.tutiket.domain.Evento;
 import com.tutiket.dto.CompraRequestDTO;
 import com.tutiket.exception.InsufficientBalanceException;
-import com.tutiket.repository.impl.*;
+import com.tutiket.repository.impl.JdbcBoletoRepository;
+import com.tutiket.repository.impl.JdbcCompraRepository;
+import com.tutiket.repository.impl.JdbcCuentaClienteRepository;
+import com.tutiket.repository.impl.JdbcEventoRepository;
+import com.tutiket.repository.impl.JdbcOperacionCuentaRepository;
 import com.tutiket.service.VentaService;
 import com.tutiket.view.MainLayoutFrame;
 import com.tutiket.view.Theme;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.sql.Connection;
-import java.util.List;
 
 public class ClienteEventosPanel extends JPanel {
 
@@ -262,6 +281,7 @@ public class ClienteEventosPanel extends JPanel {
             cargarEventosCartelera();
 
             if (mainFrame != null) {
+                refrescarPanelesEnMainFrame(mainFrame);
                 mainFrame.navegarA("MIS_BOLETOS");
             }
 
@@ -275,6 +295,22 @@ public class ClienteEventosPanel extends JPanel {
                     "Error al procesar la compra: " + ex.getMessage(),
                     "Error en Transacción",
                     JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void refrescarPanelesEnMainFrame(Container container) {
+        for (Component comp : container.getComponents()) {
+            if (comp instanceof ClienteComprasPanel) {
+                ((ClienteComprasPanel) comp).cargarHistorialCompras();
+            } else if (comp instanceof ClienteBoletosPanel) {
+                ((ClienteBoletosPanel) comp).cargarBoletosComprados();
+            } else if (comp instanceof ClienteCuentaPanel) {
+                ((ClienteCuentaPanel) comp).cargarCuentas();
+            } else if (comp instanceof ClienteMetodosPagoPanel) {
+                ((ClienteMetodosPagoPanel) comp).cargarCuentasBancarias();
+            } else if (comp instanceof Container) {
+                refrescarPanelesEnMainFrame((Container) comp);
+            }
         }
     }
 
