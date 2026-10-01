@@ -1,27 +1,34 @@
 package com.tutiket.view.admin;
 
-import com.tutiket.config.DatabaseConfig;
+import com.tutiket.domain.Evento;
+import com.tutiket.repository.impl.JdbcBoletoRepository;
+import com.tutiket.repository.impl.JdbcEventoRepository;
+import com.tutiket.service.EventoService;
 import com.tutiket.view.Theme;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.util.List;
 
 public class AdminEventosPanel extends JPanel {
 
     private JTable tablaEventos;
     private DefaultTableModel model;
+    private final EventoService eventoService;
 
     public AdminEventosPanel() {
-        setLayout(new BorderLayout());
+        this.eventoService = new EventoService(
+                new JdbcEventoRepository(),
+                new JdbcBoletoRepository()
+        );
+
+        setLayout(new BorderLayout(0, 15));
         setBackground(Theme.CONTENT_BG);
         setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        JLabel lblTitle = new JLabel("🛡 Moderación y Aprobación de Eventos");
+        JLabel lblTitle = new JLabel("🛡 Control y Cancelación de Eventos");
         lblTitle.setFont(new Font("SansSerif", Font.BOLD, 22));
         lblTitle.setForeground(Theme.TEXT_DARK);
 
@@ -38,21 +45,19 @@ public class AdminEventosPanel extends JPanel {
         JPanel panelBtns = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         panelBtns.setOpaque(false);
 
-        JButton btnPublicar = new JButton("✓ Aprobar y Publicar");
-        btnPublicar.setBackground(new Color(37, 99, 235));
-        btnPublicar.setForeground(Color.WHITE);
-        btnPublicar.setFocusPainted(false);
-        btnPublicar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnPublicar.addActionListener(e -> actualizarEstadoEvento("PUBLICADO"));
-
+        // Configuración de estilo corregida para el botón de Cancelar Evento
         JButton btnCancelar = new JButton("🚫 Cancelar Evento");
-        btnCancelar.setBackground(new Color(220, 38, 38));
+        btnCancelar.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btnCancelar.setBackground(new Color(220, 38, 38)); // Rojo
         btnCancelar.setForeground(Color.WHITE);
+        btnCancelar.setOpaque(true);
+        btnCancelar.setBorderPainted(false);
         btnCancelar.setFocusPainted(false);
         btnCancelar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnCancelar.addActionListener(e -> actualizarEstadoEvento("CANCELADO"));
+        btnCancelar.setPreferredSize(new Dimension(170, 38));
 
-        panelBtns.add(btnPublicar);
+        btnCancelar.addActionListener(e -> cancelarEvento());
+
         panelBtns.add(btnCancelar);
 
         add(lblTitle, BorderLayout.NORTH);
@@ -62,30 +67,24 @@ public class AdminEventosPanel extends JPanel {
 
     public void cargarEventos() {
         model.setRowCount(0);
-        // Columnas corregidas: 'nombre' y 'fecha_hora' coincidiendo con Evento.java
-        String sql = "SELECT e.id, e.nombre, COALESCE(p.nombre_empresa, 'Sin Promotora') as promotora, "
-                + "e.fecha_hora, e.lugar, COALESCE(e.estado, 'PENDIENTE') as estado "
-                + "FROM eventos e LEFT JOIN promotoras p ON e.id_promotora = p.id "
-                + "ORDER BY e.fecha_hora DESC";
-
-        try (Connection conn = DatabaseConfig.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
+        try {
+            List<Evento> eventos = eventoService.obtenerTodosLosEventos();
+            for (Evento ev : eventos) {
                 model.addRow(new Object[]{
-                    rs.getLong("id"),
-                    rs.getString("nombre"), // Corregido: antes 'titulo'
-                    rs.getString("promotora"),
-                    rs.getTimestamp("fecha_hora"), // Corregido: antes 'fecha_evento'
-                    rs.getString("lugar"),
-                    rs.getString("estado")
+                        ev.getId(),
+                        ev.getNombre(),
+                        ev.getImagenPath() != null ? ev.getImagenPath() : "Sin Promotora",
+                        ev.getFechaHora(),
+                        ev.getLugar(),
+                        ev.getEstado() != null ? ev.getEstado().name() : "PENDIENTE"
                 });
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al cargar eventos: " + ex.getMessage(), "Error SQL", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error al cargar la lista de eventos: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void actualizarEstadoEvento(String nuevoEstado) {
+    private void cancelarEvento() {
         int row = tablaEventos.getSelectedRow();
         if (row == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona un evento de la lista.");
@@ -93,18 +92,24 @@ public class AdminEventosPanel extends JPanel {
         }
 
         Long id = (Long) model.getValueAt(row, 0);
-        String sql = "UPDATE eventos SET estado = ? WHERE id = ?";
+        String nombre = (String) model.getValueAt(row, 1);
 
-        try (Connection conn = DatabaseConfig.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "¿Estás seguro de que deseas cancelar el evento '" + nombre + "'?",
+                "Confirmar Cancelación",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
 
-            ps.setString(1, nuevoEstado);
-            ps.setLong(2, id);
-            ps.executeUpdate();
-
-            JOptionPane.showMessageDialog(this, "Estado del evento actualizado a: " + nuevoEstado);
-            cargarEventos();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al actualizar evento: " + ex.getMessage(), "Error SQL", JOptionPane.ERROR_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                eventoService.cancelarEvento(id);
+                JOptionPane.showMessageDialog(this, "Evento cancelado correctamente.");
+                cargarEventos();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error al cancelar el evento: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 }

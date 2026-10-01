@@ -8,7 +8,9 @@ import com.tutiket.repository.impl.JdbcEventoRepository;
 import com.tutiket.view.Theme;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -32,20 +34,21 @@ public class PromotoraVentasPanel extends JPanel {
         setBorder(new EmptyBorder(25, 25, 25, 25));
 
         // Header Superior
-        JPanel panelHeader = new JPanel(new GridLayout(2, 1));
+        JPanel panelHeader = new JPanel();
+        panelHeader.setLayout(new BoxLayout(panelHeader, BoxLayout.Y_AXIS));
         panelHeader.setOpaque(false);
 
         JLabel lblTitulo = new JLabel("Métricas y Ventas - Promotora");
         lblTitulo.setFont(Theme.FONT_TITLE);
+        lblTitulo.setForeground(Theme.TEXT_DARK);
 
         JLabel lblSub = new JLabel("Resumen de ingresos y disponibilidad de tus eventos publicados.");
         lblSub.setFont(Theme.FONT_BODY);
         lblSub.setForeground(Theme.TEXT_MUTED);
 
         panelHeader.add(lblTitulo);
+        panelHeader.add(Box.createRigidArea(new Dimension(0, 4)));
         panelHeader.add(lblSub);
-
-        add(panelHeader, BorderLayout.NORTH);
 
         // Subpanel de KPIs
         JPanel panelCards = new JPanel(new GridLayout(1, 2, 20, 0));
@@ -53,16 +56,35 @@ public class PromotoraVentasPanel extends JPanel {
 
         lblTotalIngresos = new JLabel("$0.00 MXN");
         lblTotalIngresos.setFont(new Font("SansSerif", Font.BOLD, 22));
-        lblTotalIngresos.setForeground(Theme.PRIMARY_BTN);
+        lblTotalIngresos.setForeground(Theme.TAG_GREEN_TEXT);
 
         lblTotalVendidos = new JLabel("0 boletos");
         lblTotalVendidos.setFont(new Font("SansSerif", Font.BOLD, 22));
-        lblTotalVendidos.setForeground(Theme.TAG_GREEN_TEXT);
+        lblTotalVendidos.setForeground(Theme.TAG_BLUE_TEXT);
 
-        panelCards.add(crearKpiCard("Ingresos Totales Recaudados", lblTotalIngresos));
-        panelCards.add(crearKpiCard("Boletos Vendidos Totales", lblTotalVendidos));
+        panelCards.add(crearKpiCard("INGRESOS TOTALES RECAUDADOS", lblTotalIngresos));
+        panelCards.add(crearKpiCard("BOLETOS VENDIDOS TOTALES", lblTotalVendidos));
 
-        // Tabla de Desglose
+        // Header + KPIs agrupados en la sección superior
+        JPanel panelTop = new JPanel(new BorderLayout(0, 20));
+        panelTop.setOpaque(false);
+        panelTop.add(panelHeader, BorderLayout.NORTH);
+        panelTop.add(panelCards, BorderLayout.SOUTH);
+
+        add(panelTop, BorderLayout.NORTH);
+
+        // Contenedor Card de la Tabla de Desglose
+        JPanel cardTabla = new JPanel(new BorderLayout(15, 15));
+        cardTabla.setBackground(Theme.CARD_BG);
+        cardTabla.setBorder(new CompoundBorder(
+                new LineBorder(new Color(226, 232, 240), 1, true),
+                new EmptyBorder(20, 20, 20, 20)
+        ));
+
+        JLabel lblTablaTitulo = new JLabel("Desglose de Rendimiento por Evento");
+        lblTablaTitulo.setFont(Theme.FONT_SUBTITLE);
+        lblTablaTitulo.setForeground(Theme.TEXT_DARK);
+
         String[] columnas = {"ID Evento", "Nombre del Evento", "Precio Base", "Vendidos", "Disponibles", "Recaudación"};
         tableModel = new DefaultTableModel(columnas, 0) {
             @Override
@@ -73,7 +95,7 @@ public class PromotoraVentasPanel extends JPanel {
 
         tablaResumen = new JTable(tableModel);
         tablaResumen.setFont(Theme.FONT_BODY);
-        tablaResumen.setRowHeight(36);
+        tablaResumen.setRowHeight(38);
         tablaResumen.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tablaResumen.setShowGrid(false);
         tablaResumen.setIntercellSpacing(new Dimension(0, 0));
@@ -90,12 +112,10 @@ public class PromotoraVentasPanel extends JPanel {
         scrollTabla.getViewport().setBackground(Color.WHITE);
         scrollTabla.setBorder(BorderFactory.createLineBorder(new Color(226, 232, 240), 1));
 
-        JPanel panelCentro = new JPanel(new BorderLayout(0, 15));
-        panelCentro.setOpaque(false);
-        panelCentro.add(panelCards, BorderLayout.NORTH);
-        panelCentro.add(scrollTabla, BorderLayout.CENTER);
+        cardTabla.add(lblTablaTitulo, BorderLayout.NORTH);
+        cardTabla.add(scrollTabla, BorderLayout.CENTER);
 
-        add(panelCentro, BorderLayout.CENTER);
+        add(cardTabla, BorderLayout.CENTER);
 
         cargarMetricas();
     }
@@ -185,19 +205,21 @@ public class PromotoraVentasPanel extends JPanel {
     }
 
     private JPanel crearKpiCard(String titulo, JLabel lblValor) {
-        JPanel card = new JPanel(new BorderLayout(5, 5));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
+        JPanel card = new JPanel();
+        card.setBackground(Theme.CARD_BG);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(new CompoundBorder(
+                new LineBorder(new Color(226, 232, 240), 1, true),
                 new EmptyBorder(18, 20, 18, 20)
         ));
 
         JLabel lblTit = new JLabel(titulo);
-        lblTit.setFont(Theme.FONT_SMALL);
+        lblTit.setFont(new Font("SansSerif", Font.BOLD, 11));
         lblTit.setForeground(Theme.TEXT_MUTED);
 
-        card.add(lblTit, BorderLayout.NORTH);
-        card.add(lblValor, BorderLayout.CENTER);
+        card.add(lblTit);
+        card.add(Box.createRigidArea(new Dimension(0, 8)));
+        card.add(lblValor);
 
         return card;
     }

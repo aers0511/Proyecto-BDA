@@ -1,9 +1,13 @@
 package com.tutiket.view;
 
-import com.tutiket.view.admin.AdminClientesPanel;
 import com.tutiket.domain.Administrador;
 import com.tutiket.domain.Cliente;
 import com.tutiket.domain.Promotora;
+import com.tutiket.repository.CuentaPromotoraRepository;
+import com.tutiket.repository.PromotoraRepository;
+import com.tutiket.repository.impl.JdbcCuentaPromotoraRepository;
+import com.tutiket.repository.impl.JdbcPromotoraRepository;
+import com.tutiket.service.PromotoraService;
 import com.tutiket.view.admin.*;
 import com.tutiket.view.cliente.*;
 import com.tutiket.view.promotora.*;
@@ -36,6 +40,14 @@ public class MainLayoutFrame extends JFrame {
     private AdminPromotorasPanel adminPromotorasPanel;
     private AdminEventosPanel adminEventosPanel;
     private AdminClientesPanel adminClientesPanel;
+
+    // Paleta de Colores Estandarizada
+    private static final Color COLOR_BASE_BG = new Color(30, 41, 59);        // Fondo normal
+    private static final Color COLOR_HOVER_BG = new Color(51, 65, 85);       // Hover normal
+    private static final Color COLOR_TEXT_MUTED = new Color(203, 213, 225);   // Texto inactivo
+    private static final Color COLOR_TEXT_WHITE = Color.WHITE;               // Texto activo/destacado
+
+    private static final Color COLOR_DANGER_RED_HOVER = new Color(185, 28, 28);
 
     public MainLayoutFrame(Object usuario) {
         this.usuarioAutenticado = usuario;
@@ -79,8 +91,14 @@ public class MainLayoutFrame extends JFrame {
             navegarA("DASHBOARD_PROMOTORA");
 
         } else if (usuarioAutenticado instanceof Administrador) {
+            // Inicializar las dependencias necesarias para AdminPromotorasPanel
+            PromotoraRepository promotoraRepo = new JdbcPromotoraRepository();
+            CuentaPromotoraRepository cuentaRepo = new JdbcCuentaPromotoraRepository();
+            PromotoraService promotoraService = new PromotoraService(promotoraRepo, cuentaRepo);
+
+            // Instanciación correcta de paneles
             adminReportesPanel = new AdminReportesPanel();
-            adminPromotorasPanel = new AdminPromotorasPanel();
+            adminPromotorasPanel = new AdminPromotorasPanel(promotoraService);
             adminEventosPanel = new AdminEventosPanel();
             adminClientesPanel = new AdminClientesPanel();
 
@@ -110,7 +128,7 @@ public class MainLayoutFrame extends JFrame {
 
         JPanel cardUser = new JPanel();
         cardUser.setLayout(new BoxLayout(cardUser, BoxLayout.Y_AXIS));
-        cardUser.setBackground(Theme.SIDEBAR_HOVER);
+        cardUser.setBackground(COLOR_BASE_BG);
         cardUser.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Theme.SIDEBAR_ACTIVE, 1),
                 new EmptyBorder(10, 12, 10, 12)
@@ -149,49 +167,87 @@ public class MainLayoutFrame extends JFrame {
             agregarBotonMenu(menuNav, "📅  Mis Eventos", "EVENTOS_PROMOTORA");
         } else if (usuarioAutenticado instanceof Administrador) {
             agregarBotonMenu(menuNav, "📊  Métricas Globales", "ADMIN_REPORTES");
-            agregarBotonMenu(menuNav, "🏢  Aprobar Promotoras", "ADMIN_PROMOTORAS");
-            agregarBotonMenu(menuNav, "🛡️  Moderación Eventos", "ADMIN_EVENTOS");
+            agregarBotonMenu(menuNav, "🏢  Gestión Promotoras", "ADMIN_PROMOTORAS");
+            agregarBotonMenu(menuNav, "🛡  Moderación Eventos", "ADMIN_EVENTOS");
             agregarBotonMenu(menuNav, "👥  Gestión Clientes", "ADMIN_CLIENTES");
         }
 
-        JButton btnLogout = new JButton("🚪  Cerrar Sesión");
+        // Botón Cerrar Sesión
+        JButton btnLogout = crearBotonEstandar("🚪  Cerrar Sesión", COLOR_BASE_BG, new Color(248, 113, 113));
         btnLogout.setFont(Theme.FONT_BOLD);
-        btnLogout.setForeground(new Color(254, 202, 202));
-        btnLogout.setBackground(Theme.SIDEBAR_BG);
-        btnLogout.setOpaque(true);
-        btnLogout.setContentAreaFilled(true);
-        btnLogout.setBorderPainted(false);
-        btnLogout.setFocusPainted(false);
-        btnLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnLogout.setHorizontalAlignment(SwingConstants.LEFT);
-        btnLogout.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+
+        btnLogout.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btnLogout.setBackground(COLOR_DANGER_RED_HOVER);
+                btnLogout.setForeground(COLOR_TEXT_WHITE);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btnLogout.setBackground(COLOR_BASE_BG);
+                btnLogout.setForeground(new Color(248, 113, 113));
+            }
+        });
+
         btnLogout.addActionListener(e -> confirmarCierreSesion());
 
         sidebar.add(panelTopSidebar, BorderLayout.NORTH);
-        sidebar.add(new JScrollPane(menuNav) {{ setBorder(null); setOpaque(false); getViewport().setOpaque(false); }}, BorderLayout.CENTER);
+        sidebar.add(new JScrollPane(menuNav) {
+            {
+                setBorder(null);
+                setOpaque(false);
+                getViewport().setOpaque(false);
+            }
+        }, BorderLayout.CENTER);
         sidebar.add(btnLogout, BorderLayout.SOUTH);
 
         return sidebar;
     }
 
-    private void agregarBotonMenu(JPanel parent, String texto, String cardName) {
+    private JButton crearBotonEstandar(String texto, Color bg, Color fg) {
         JButton btn = new JButton(texto);
         btn.setFont(Theme.FONT_SUBTITLE);
-        btn.setForeground(new Color(226, 232, 240));
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        btn.setForeground(fg);
+        btn.setBackground(bg);
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        btn.setPreferredSize(new Dimension(240, 42));
         btn.setHorizontalAlignment(SwingConstants.LEFT);
         btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
         btn.setOpaque(true);
-        btn.setContentAreaFilled(true);
-        btn.setBackground(Theme.SIDEBAR_BG);
-        btn.setBorder(BorderFactory.createEmptyBorder(8, 14, 8, 14));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBorder(new EmptyBorder(0, 14, 0, 14));
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return btn;
+    }
+
+    private void agregarBotonMenu(JPanel parent, String texto, String cardName) {
+        JButton btn = crearBotonEstandar(texto, COLOR_BASE_BG, COLOR_TEXT_MUTED);
+
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (!btn.getBackground().equals(Theme.SIDEBAR_ACTIVE)) {
+                    btn.setBackground(COLOR_HOVER_BG);
+                    btn.setForeground(COLOR_TEXT_WHITE);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (!btn.getBackground().equals(Theme.SIDEBAR_ACTIVE)) {
+                    btn.setBackground(COLOR_BASE_BG);
+                    btn.setForeground(COLOR_TEXT_MUTED);
+                }
+            }
+        });
 
         btn.addActionListener(e -> navegarA(cardName));
         menuButtonsMap.put(cardName, btn);
 
         parent.add(btn);
-        parent.add(Box.createRigidArea(new Dimension(0, 4)));
+        parent.add(Box.createRigidArea(new Dimension(0, 5)));
     }
 
     public void navegarA(String vistaCard) {
@@ -199,33 +255,56 @@ public class MainLayoutFrame extends JFrame {
             JButton btn = entry.getValue();
             if (entry.getKey().equals(vistaCard)) {
                 btn.setBackground(Theme.SIDEBAR_ACTIVE);
-                btn.setForeground(Color.WHITE);
+                btn.setForeground(COLOR_TEXT_WHITE);
                 btn.setFont(Theme.FONT_BOLD);
+                btn.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(0, 4, 0, 0, Color.WHITE),
+                        new EmptyBorder(0, 10, 0, 14)
+                ));
             } else {
-                btn.setBackground(Theme.SIDEBAR_BG);
-                btn.setForeground(new Color(226, 232, 240));
+                btn.setBackground(COLOR_BASE_BG);
+                btn.setForeground(COLOR_TEXT_MUTED);
                 btn.setFont(Theme.FONT_SUBTITLE);
+                btn.setBorder(new EmptyBorder(0, 14, 0, 14));
             }
         }
 
-        if ("ADMIN_PROMOTORAS".equals(vistaCard) && adminPromotorasPanel != null) adminPromotorasPanel.cargarPromotoras();
-        if ("ADMIN_EVENTOS".equals(vistaCard) && adminEventosPanel != null) adminEventosPanel.cargarEventos();
-        if ("ADMIN_CLIENTES".equals(vistaCard) && adminClientesPanel != null) adminClientesPanel.cargarClientes();
-        
+        if ("ADMIN_PROMOTORAS".equals(vistaCard) && adminPromotorasPanel != null) {
+            adminPromotorasPanel.cargarPromotoras();
+        }
+        if ("ADMIN_EVENTOS".equals(vistaCard) && adminEventosPanel != null) {
+            adminEventosPanel.cargarEventos();
+        }
+        if ("ADMIN_CLIENTES".equals(vistaCard) && adminClientesPanel != null) {
+            adminClientesPanel.cargarClientes();
+        }
+
         cardLayout.show(panelContenidoCentral, vistaCard);
     }
 
     private String obtenerNombreUsuario() {
-        if (usuarioAutenticado instanceof Cliente) return ((Cliente) usuarioAutenticado).getNombre();
-        if (usuarioAutenticado instanceof Promotora) return ((Promotora) usuarioAutenticado).getNombreEmpresa();
-        if (usuarioAutenticado instanceof Administrador) return ((Administrador) usuarioAutenticado).getNombre();
+        if (usuarioAutenticado instanceof Cliente) {
+            return ((Cliente) usuarioAutenticado).getNombre();
+        }
+        if (usuarioAutenticado instanceof Promotora) {
+            return ((Promotora) usuarioAutenticado).getNombreEmpresa();
+        }
+        if (usuarioAutenticado instanceof Administrador) {
+            return ((Administrador) usuarioAutenticado).getNombre();
+        }
         return "Usuario";
     }
 
     private String obtenerRolUsuario() {
-        if (usuarioAutenticado instanceof Cliente) return "Cliente Registrado";
-        if (usuarioAutenticado instanceof Promotora) return "Promotora Partner";
-        if (usuarioAutenticado instanceof Administrador) return "Administrador General";
+        if (usuarioAutenticado instanceof Cliente) {
+            return "Cliente Registrado";
+        }
+        if (usuarioAutenticado instanceof Promotora) {
+            return "Promotora Partner";
+        }
+        if (usuarioAutenticado instanceof Administrador) {
+            return "Administrador General";
+        }
         return "Usuario";
     }
 

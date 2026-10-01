@@ -3,6 +3,7 @@ package com.tutiket.repository;
 import com.tutiket.domain.Cliente;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 public interface ClienteRepository {
@@ -10,4 +11,6 @@ public interface ClienteRepository {
     Optional<Cliente> buscarPorId(Connection conn, Long id) throws SQLException;
     Optional<Cliente> buscarPorUsuario(Connection conn, String usuario) throws SQLException;
     boolean existeUsuarioOCorreo(Connection conn, String usuario, String correo) throws SQLException;
+    boolean darDeBaja(Connection conn, Long id) throws SQLException;
+    List<Cliente> listarTodos(Connection conn) throws SQLException;
 }

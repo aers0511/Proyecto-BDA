@@ -10,6 +10,7 @@ import com.tutiket.util.PasswordUtil;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.util.List;
 
 public class PromotoraService {
 
@@ -19,6 +20,12 @@ public class PromotoraService {
     public PromotoraService(PromotoraRepository promotoraRepository, CuentaPromotoraRepository cuentaPromotoraRepository) {
         this.promotoraRepository = promotoraRepository;
         this.cuentaPromotoraRepository = cuentaPromotoraRepository;
+    }
+
+    public List<Promotora> listarTodas() throws Exception {
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            return promotoraRepository.buscarTodas(conn);
+        }
     }
 
     public Promotora registrarPromotora(Promotora promotora) throws Exception {
@@ -35,7 +42,7 @@ public class PromotoraService {
 
             Promotora guardada = promotoraRepository.guardar(conn, promotora);
 
-            // Requisito: Crear 2 cuentas iniciales con saldo 0 para la promotora[cite: 1]
+            // Requisito: Crear 2 cuentas iniciales con saldo 0 para la promotora[cite: 22]
             for (int i = 1; i <= 2; i++) {
                 CuentaPromotora c = new CuentaPromotora();
                 c.setIdPromotora(guardada.getId());

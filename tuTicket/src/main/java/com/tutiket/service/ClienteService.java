@@ -11,6 +11,7 @@ import com.tutiket.util.PasswordUtil;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.util.List;
 import java.util.Random;
 
 public class ClienteService {
@@ -79,6 +80,34 @@ public class ClienteService {
             DatabaseConfig.commitTransaction();
             return clienteGuardado;
 
+        } catch (Exception e) {
+            DatabaseConfig.rollbackTransaction();
+            throw e;
+        }
+    }
+
+    public List<Cliente> obtenerTodosLosClientes() throws Exception {
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            return clienteRepository.listarTodos(conn);
+        }
+    }
+
+    public boolean darDeBajaCliente(Long idCliente) throws Exception {
+        if (idCliente == null || idCliente <= 0) {
+            throw new BusinessException("El ID del cliente no es válido.");
+        }
+
+        DatabaseConfig.beginTransaction();
+        try {
+            Connection conn = DatabaseConfig.getConnection();
+            
+            boolean dadoDeBaja = clienteRepository.darDeBaja(conn, idCliente);
+            if (!dadoDeBaja) {
+                throw new BusinessException("No se encontró el cliente o ya se encuentra dado de baja.");
+            }
+
+            DatabaseConfig.commitTransaction();
+            return true;
         } catch (Exception e) {
             DatabaseConfig.rollbackTransaction();
             throw e;

@@ -51,7 +51,7 @@ public class AdminDashboardPanel extends JPanel {
         JPanel panelCentral = new JPanel(new BorderLayout(20, 20));
         panelCentral.setOpaque(false);
 
-        // Grid de Tarjetas KPI (2x2 o 1x4)
+        // Grid de Tarjetas KPI
         JPanel panelCards = new JPanel(new GridLayout(1, 4, 15, 0));
         panelCards.setOpaque(false);
 
@@ -113,7 +113,7 @@ public class AdminDashboardPanel extends JPanel {
 
         add(panelCentral, BorderLayout.CENTER);
 
-        // Carga de datos
+        // Carga automática al iniciar el componente
         cargarMetricas();
         cargarActividadReciente();
     }
@@ -187,7 +187,6 @@ public class AdminDashboardPanel extends JPanel {
                 if (rs.next()) {
                     BigDecimal totalVentas = rs.getBigDecimal("total_ventas");
                     lblTotalVentas.setText(String.format("$%,.2f MXN", totalVentas));
-                    // Supuesto de comisión plataforma 10%
                     BigDecimal comisiones = totalVentas.multiply(new BigDecimal("0.10"));
                     lblComisiones.setText(String.format("$%,.2f MXN", comisiones));
                 }
@@ -203,7 +202,7 @@ public class AdminDashboardPanel extends JPanel {
             }
 
             // Total Usuarios
-            String queryUsuarios = "SELECT COUNT(*) AS total FROM usuarios";
+            String queryUsuarios = "SELECT COUNT(*) AS total FROM clientes WHERE activo = TRUE";
             try (PreparedStatement ps = conn.prepareStatement(queryUsuarios);
                  ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -221,7 +220,7 @@ public class AdminDashboardPanel extends JPanel {
         tableModel.setRowCount(0);
         String sql = "SELECT c.id, u.nombre, c.fecha_compra, c.total, c.estado " +
                      "FROM compras c " +
-                     "LEFT JOIN usuarios u ON c.cliente_id = u.id " +
+                     "LEFT JOIN clientes u ON c.cliente_id = u.id " +
                      "ORDER BY c.fecha_compra DESC LIMIT 10";
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -239,7 +238,7 @@ public class AdminDashboardPanel extends JPanel {
                 tableModel.addRow(fila);
             }
         } catch (Exception ex) {
-            // Manejo silencioso o logger en vista previa
+            // Manejo silencioso en vista previa
         }
     }
 }

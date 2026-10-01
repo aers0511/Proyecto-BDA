@@ -9,6 +9,7 @@ import com.tutiket.repository.BoletoRepository;
 import com.tutiket.repository.EventoRepository;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.UUID;
 
 public class EventoService {
@@ -30,17 +31,14 @@ public class EventoService {
         try {
             Connection conn = DatabaseConfig.getConnection();
 
-            // 1. Guardar el evento en la BD
             Evento eventoGuardado = eventoRepository.guardar(conn, evento);
 
-            // 2. Generar automáticamente la lista de boletos disponibles
             for (int i = 1; i <= cantidadBoletos; i++) {
                 Boleto boleto = new Boleto();
                 boleto.setIdEvento(eventoGuardado.getId());
                 boleto.setPrecio(eventoGuardado.getPrecioBase());
                 boleto.setEstado(EstadoBoleto.DISPONIBLE);
                 
-                // Generar un folio único por boleto (ejemplo: EV5-0001-A1B2)
                 String folio = String.format("EV%d-%04d-%s", 
                         eventoGuardado.getId(), 
                         i, 
@@ -53,6 +51,28 @@ public class EventoService {
             DatabaseConfig.commitTransaction();
             return eventoGuardado;
 
+        } catch (Exception e) {
+            DatabaseConfig.rollbackTransaction();
+            throw e;
+        }
+    }
+
+    public List<Evento> obtenerTodosLosEventos() throws Exception {
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            return eventoRepository.listarTodosConPromotora(conn);
+        }
+    }
+
+    public void cancelarEvento(Long idEvento) throws Exception {
+        if (idEvento == null || idEvento <= 0) {
+            throw new BusinessException("El ID del evento no es válido.");
+        }
+
+        DatabaseConfig.beginTransaction();
+        try {
+            Connection conn = DatabaseConfig.getConnection();
+            eventoRepository.actualizarEstado(conn, idEvento, "CANCELADO");
+            DatabaseConfig.commitTransaction();
         } catch (Exception e) {
             DatabaseConfig.rollbackTransaction();
             throw e;

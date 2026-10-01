@@ -51,6 +51,25 @@ public class JdbcEventoRepository implements EventoRepository {
     }
 
     @Override
+    public List<Evento> listarTodosConPromotora(Connection conn) throws SQLException {
+        List<Evento> eventos = new ArrayList<>();
+        String sql = "SELECT e.*, COALESCE(p.nombre_empresa, 'Sin Promotora') AS nombre_promotora " +
+                     "FROM eventos e LEFT JOIN promotoras p ON e.id_promotora = p.id " +
+                     "ORDER BY e.fecha_hora DESC";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                Evento evento = mapResultSetToEvento(rs);
+                // Si tienes un campo transient o setter temporal para mostrar la promotora
+                evento.setImagenPath(rs.getString("nombre_promotora")); // O mapearlo en tu DTO / Objeto
+                eventos.add(evento);
+            }
+        }
+        return eventos;
+    }
+
+    @Override
     public Optional<Evento> buscarPorId(Connection conn, Long id) throws SQLException {
         String sql = "SELECT * FROM eventos WHERE id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -103,11 +122,14 @@ public class JdbcEventoRepository implements EventoRepository {
         evento.setLugar(rs.getString("lugar"));
         evento.setPrecioBase(rs.getBigDecimal("precio_base"));
         evento.setCantidadBoletos(rs.getInt("cantidad_boletos"));
-        evento.setImagenPath(rs.getString("imagen_path"));
 
         String estadoStr = rs.getString("estado");
         if (estadoStr != null) {
-            evento.setEstado(EstadoEvento.valueOf(estadoStr));
+            try {
+                evento.setEstado(EstadoEvento.valueOf(estadoStr));
+            } catch (IllegalArgumentException e) {
+                evento.setEstado(null);
+            }
         }
         return evento;
     }

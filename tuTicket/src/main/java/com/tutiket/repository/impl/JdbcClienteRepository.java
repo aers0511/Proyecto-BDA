@@ -4,6 +4,8 @@ import com.tutiket.domain.Cliente;
 import com.tutiket.repository.ClienteRepository;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class JdbcClienteRepository implements ClienteRepository {
@@ -69,6 +71,29 @@ public class JdbcClienteRepository implements ClienteRepository {
             }
         }
         return false;
+    }
+
+    @Override
+    public List<Cliente> listarTodos(Connection conn) throws SQLException {
+        List<Cliente> clientes = new ArrayList<>();
+        String sql = "SELECT * FROM clientes ORDER BY id DESC";
+        try (PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                clientes.add(mapResultSetToCliente(rs));
+            }
+        }
+        return clientes;
+    }
+
+    @Override
+    public boolean darDeBaja(Connection conn, Long id) throws SQLException {
+        String sql = "UPDATE clientes SET activo = FALSE WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, id);
+            int filasAfectadas = stmt.executeUpdate();
+            return filasAfectadas > 0;
+        }
     }
 
     private Cliente mapResultSetToCliente(ResultSet rs) throws SQLException {

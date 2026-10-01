@@ -11,8 +11,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.util.List;
@@ -30,7 +28,7 @@ public class AdminReportesPanel extends JPanel {
         setBackground(Theme.CONTENT_BG);
         setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        // Header Superior con Botón de Actualizar
+        // Header Superior sin Botón de Actualizar
         JPanel panelHeader = new JPanel(new BorderLayout(15, 0));
         panelHeader.setOpaque(false);
 
@@ -50,31 +48,7 @@ public class AdminReportesPanel extends JPanel {
         panelTextoHeader.add(Box.createRigidArea(new Dimension(0, 4)));
         panelTextoHeader.add(lblSub);
 
-        JButton btnActualizar = new JButton("Actualizar Datos");
-        btnActualizar.setFont(Theme.FONT_BOLD);
-        btnActualizar.setForeground(Color.WHITE);
-        btnActualizar.setBackground(Theme.PRIMARY_BTN);
-        btnActualizar.setFocusPainted(false);
-        btnActualizar.setBorderPainted(false);
-        btnActualizar.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnActualizar.setBorder(new EmptyBorder(10, 18, 10, 18));
-
-        btnActualizar.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                btnActualizar.setBackground(Theme.PRIMARY_BTN.darker());
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                btnActualizar.setBackground(Theme.PRIMARY_BTN);
-            }
-        });
-
-        btnActualizar.addActionListener(e -> calcularMetricas());
-
         panelHeader.add(panelTextoHeader, BorderLayout.CENTER);
-        panelHeader.add(btnActualizar, BorderLayout.EAST);
 
         // Tarjetas KPI Grid
         JPanel gridKpis = new JPanel(new GridLayout(1, 3, 20, 0));
@@ -140,6 +114,7 @@ public class AdminReportesPanel extends JPanel {
 
         add(cardTabla, BorderLayout.CENTER);
 
+        // Carga automática de datos al iniciar el componente
         calcularMetricas();
     }
 

@@ -10,6 +10,7 @@ public interface EventoRepository {
     Evento guardar(Connection conn, Evento evento) throws SQLException;
     Optional<Evento> buscarPorId(Connection conn, Long id) throws SQLException;
     List<Evento> listarActivos(Connection conn) throws SQLException;
+    List<Evento> listarTodosConPromotora(Connection conn) throws SQLException;
     List<Evento> listarPorPromotora(Connection conn, Long idPromotora) throws SQLException;
     void actualizarEstado(Connection conn, Long idEvento, String estado) throws SQLException;
 }

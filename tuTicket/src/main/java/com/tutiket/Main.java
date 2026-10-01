@@ -1,11 +1,10 @@
 package com.tutiket;
 
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
 import com.tutiket.util.DataInitializer;
 import com.tutiket.view.LoginFrame;
-
-import javax.swing.*;
-import javax.xml.crypto.Data;
-
 public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
