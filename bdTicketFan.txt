@@ -1,0 +1,218 @@
+CREATE DATABASE IF NOT EXISTS `ticketfan` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `ticketfan`;
+
+-- ------------------------------------------------------
+-- 1. TABLA: promotoras
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `promotoras`;
+CREATE TABLE `promotoras` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `nombre_empresa` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `rfc` varchar(13) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `correo` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `usuario` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `contrasena` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `rfc` (`rfc`),
+  UNIQUE KEY `correo` (`correo`),
+  UNIQUE KEY `usuario` (`usuario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------
+-- 2. TABLA: clientes
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `clientes`;
+CREATE TABLE `clientes` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `correo` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `usuario` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `contrasena` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT '1',
+  `fecha_registro` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `correo` (`correo`),
+  UNIQUE KEY `usuario` (`usuario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------
+-- 3. TABLA: administradores
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `administradores`;
+CREATE TABLE `administradores` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `correo` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `usuario` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `contrasena` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fecha_registro` datetime DEFAULT CURRENT_TIMESTAMP,
+  `promotora_id` bigint DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `correo` (`correo`),
+  UNIQUE KEY `usuario` (`usuario`),
+  KEY `fk_admin_promotora` (`promotora_id`),
+  CONSTRAINT `fk_admin_promotora` FOREIGN KEY (`promotora_id`) REFERENCES `promotoras` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------
+-- 4. TABLA: cuentas_cliente
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `cuentas_cliente`;
+CREATE TABLE `cuentas_cliente` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id_cliente` bigint NOT NULL,
+  `numero_cuenta` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `banco` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `saldo` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `activo` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `numero_cuenta` (`numero_cuenta`),
+  KEY `id_cliente` (`id_cliente`),
+  CONSTRAINT `cuentas_cliente_ibfk_1` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------
+-- 5. TABLA: cuentas_promotora
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `cuentas_promotora`;
+CREATE TABLE `cuentas_promotora` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id_promotora` bigint NOT NULL,
+  `numero_cuenta` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `banco` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `saldo` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `activo` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `numero_cuenta` (`numero_cuenta`),
+  KEY `id_promotora` (`id_promotora`),
+  CONSTRAINT `cuentas_promotora_ibfk_1` FOREIGN KEY (`id_promotora`) REFERENCES `promotoras` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------
+-- 6. TABLA: eventos
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `eventos`;
+CREATE TABLE `eventos` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id_promotora` bigint NOT NULL,
+  `nombre` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `categoria` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `clasificacion` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fecha_hora` datetime NOT NULL,
+  `lugar` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `precio_base` decimal(10,2) NOT NULL,
+  `imagen_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `estado` enum('ACTIVO','CANCELADO','FINALIZADO') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ACTIVO',
+  `cantidad_boletos` int NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `id_promotora` (`id_promotora`),
+  CONSTRAINT `eventos_ibfk_1` FOREIGN KEY (`id_promotora`) REFERENCES `promotoras` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------
+-- 7. TABLA: compras
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `compras`;
+CREATE TABLE `compras` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id_cliente` bigint NOT NULL,
+  `id_cuenta` bigint NOT NULL,
+  `total` decimal(10,2) NOT NULL,
+  `fecha_compra` datetime DEFAULT CURRENT_TIMESTAMP,
+  `estado` enum('COMPLETADA','CANCELADA','REEMBOLSADA') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'COMPLETADA',
+  PRIMARY KEY (`id`),
+  KEY `id_cliente` (`id_cliente`),
+  KEY `id_cuenta` (`id_cuenta`),
+  CONSTRAINT `compras_ibfk_1` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id`),
+  CONSTRAINT `compras_ibfk_2` FOREIGN KEY (`id_cuenta`) REFERENCES `cuentas_cliente` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------
+-- 8. TABLA: boletos
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `boletos`;
+CREATE TABLE `boletos` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id_evento` bigint NOT NULL,
+  `id_compra` bigint DEFAULT NULL,
+  `folio` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `zona` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'General',
+  `asiento` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `precio` decimal(10,2) NOT NULL,
+  `estado` enum('DISPONIBLE','RESERVADO','VENDIDO','USADO','CANCELADO') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'DISPONIBLE',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `folio` (`folio`),
+  KEY `id_evento` (`id_evento`),
+  KEY `id_compra` (`id_compra`),
+  CONSTRAINT `boletos_ibfk_1` FOREIGN KEY (`id_evento`) REFERENCES `eventos` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `boletos_ibfk_2` FOREIGN KEY (`id_compra`) REFERENCES `compras` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------
+-- 9. TABLA: operaciones_cuenta
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `operaciones_cuenta`;
+CREATE TABLE `operaciones_cuenta` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id_cuenta_cliente` bigint DEFAULT NULL,
+  `id_cuenta_promotora` bigint DEFAULT NULL,
+  `tipo_operacion` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `monto` decimal(10,2) NOT NULL,
+  `fecha_operacion` datetime NOT NULL,
+  `descripcion` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id_cuenta_cliente` (`id_cuenta_cliente`),
+  KEY `id_cuenta_promotora` (`id_cuenta_promotora`),
+  CONSTRAINT `operaciones_cuenta_ibfk_1` FOREIGN KEY (`id_cuenta_cliente`) REFERENCES `cuentas_cliente` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `operaciones_cuenta_ibfk_2` FOREIGN KEY (`id_cuenta_promotora`) REFERENCES `cuentas_promotora` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------
+-- 10. TRIGGER: trg_cancelar_evento_y_reembolsar
+-- ------------------------------------------------------
+DELIMITER $$
+
+DROP TRIGGER IF EXISTS `trg_cancelar_evento_y_reembolsar`$$
+
+CREATE TRIGGER `trg_cancelar_evento_y_reembolsar` 
+AFTER UPDATE ON `eventos` 
+FOR EACH ROW 
+BEGIN
+    IF NEW.estado = 'CANCELADO' AND OLD.estado <> 'CANCELADO' THEN
+        
+        -- 1. Devolver el dinero a las cuentas de los clientes afectados
+        UPDATE cuentas_cliente cc
+        JOIN compras c ON cc.id = c.id_cuenta
+        JOIN boletos b ON b.id_compra = c.id
+        SET cc.saldo = cc.saldo + b.precio
+        WHERE b.id_evento = NEW.id
+          AND b.estado = 'VENDIDO'
+          AND c.estado = 'COMPLETADA';
+
+        -- 2. Registrar el movimiento bancario en el historial de operaciones
+        INSERT INTO operaciones_cuenta (id_cuenta_cliente, tipo_operacion, monto, fecha_operacion, descripcion)
+        SELECT c.id_cuenta, 'REEMBOLSO_CANCELACION', SUM(b.precio), NOW(), CONCAT('Reembolso por cancelación de evento ID: ', NEW.id)
+        FROM compras c
+        JOIN boletos b ON b.id_compra = c.id
+        WHERE b.id_evento = NEW.id
+          AND b.estado = 'VENDIDO'
+          AND c.estado = 'COMPLETADA'
+        GROUP BY c.id, c.id_cuenta;
+
+        -- 3. Marcar las compras como REEMBOLSADA
+        UPDATE compras c
+        JOIN boletos b ON b.id_compra = c.id
+        SET c.estado = 'REEMBOLSADA'
+        WHERE b.id_evento = NEW.id
+          AND c.estado = 'COMPLETADA';
+
+        -- 4. Inhabilitar todos los boletos del evento
+        UPDATE boletos
+        SET estado = 'CANCELADO'
+        WHERE id_evento = NEW.id;
+
+    END IF;
+END$$
+
+DELIMITER ;
