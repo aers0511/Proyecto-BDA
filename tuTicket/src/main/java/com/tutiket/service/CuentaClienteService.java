@@ -2,6 +2,7 @@ package com.tutiket.service;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Random;
 
@@ -14,11 +15,9 @@ import com.tutiket.repository.OperacionCuentaRepository;
 public class CuentaClienteService {
 
     private final CuentaClienteRepository cuentaRepository;
-    private final OperacionCuentaRepository operacionRepository;
 
     public CuentaClienteService(CuentaClienteRepository cuentaRepository, OperacionCuentaRepository operacionRepository) {
         this.cuentaRepository = cuentaRepository;
-        this.operacionRepository = operacionRepository;
     }
 
     public List<CuentaCliente> obtenerCuentasPorCliente(Long idCliente) throws Exception {
@@ -42,7 +41,7 @@ public class CuentaClienteService {
             cuentaRepository.actualizarSaldo(conn, idCuenta, nuevoSaldo);
 
             DatabaseConfig.commitTransaction();
-        } catch (Exception e) {
+        } catch (SQLException | RuntimeException e) {
             DatabaseConfig.rollbackTransaction();
             throw e;
         }
@@ -78,7 +77,7 @@ public class CuentaClienteService {
             DatabaseConfig.commitTransaction();
             return guardada;
 
-        } catch (Exception e) {
+        } catch (SQLException | RuntimeException e) {
             DatabaseConfig.rollbackTransaction();
             throw e;
         }
