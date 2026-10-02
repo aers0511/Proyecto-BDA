@@ -1,12 +1,16 @@
 package com.tutiket.repository.impl;
 
-import com.tutiket.domain.Promotora;
-import com.tutiket.repository.PromotoraRepository;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import com.tutiket.domain.Promotora;
+import com.tutiket.repository.PromotoraRepository;
 
 public class JdbcPromotoraRepository implements PromotoraRepository {
 
@@ -19,7 +23,7 @@ public class JdbcPromotoraRepository implements PromotoraRepository {
             stmt.setString(3, promotora.getUsuario());
             stmt.setString(4, promotora.getContrasena());
             stmt.setString(5, promotora.getRfc());
-            stmt.setBoolean(6, promotora.getActivo());
+            stmt.setBoolean(6, promotora.getActivo() != null ? promotora.getActivo() : true);
             stmt.executeUpdate();
 
             try (ResultSet rs = stmt.getGeneratedKeys()) {
@@ -36,8 +40,7 @@ public class JdbcPromotoraRepository implements PromotoraRepository {
         List<Promotora> lista = new ArrayList<>();
         String sql = "SELECT id, nombre_empresa, correo, usuario, contrasena, rfc, COALESCE(activo, true) AS activo FROM promotoras";
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 lista.add(mapResultSetToPromotora(rs));
             }
